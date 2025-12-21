@@ -109,7 +109,13 @@ export default function VehicleDetails() {
 
 function OverviewTab({ vehicle }: { vehicle: any }) {
   const updateVehicle = useUpdateVehicle();
-  const [mileage, setMileage] = useState(vehicle.currentMileage);
+  const [mileage, setMileage] = useState<number>(vehicle.currentMileage || 0);
+
+  const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const num = val === "" ? 0 : parseInt(val, 10);
+    setMileage(isNaN(num) ? 0 : num);
+  };
 
   return (
     <div className="grid md:grid-cols-3 gap-6">
@@ -132,14 +138,18 @@ function OverviewTab({ vehicle }: { vehicle: any }) {
               <div className="flex items-center gap-3 mt-1">
                 <Input 
                   type="number" 
-                  value={mileage} 
-                  onChange={(e) => setMileage(parseInt(e.target.value))}
+                  value={mileage || ""} 
+                  onChange={handleMileageChange}
                   className="max-w-[150px]"
                 />
                 <Button 
                   size="sm" 
-                  disabled={mileage === vehicle.currentMileage}
-                  onClick={() => updateVehicle.mutate({ id: vehicle.id, currentMileage: mileage })}
+                  disabled={mileage === vehicle.currentMileage || isNaN(mileage)}
+                  onClick={() => {
+                    if (!isNaN(mileage) && mileage !== vehicle.currentMileage) {
+                      updateVehicle.mutate({ id: vehicle.id, currentMileage: mileage });
+                    }
+                  }}
                 >
                   Update
                 </Button>

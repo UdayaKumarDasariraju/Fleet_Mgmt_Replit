@@ -61,9 +61,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateVehicle(id: number, updates: Partial<InsertVehicle>): Promise<Vehicle> {
+    // Filter out undefined/null values and empty objects
+    const filteredUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, v]) => v !== undefined && v !== null)
+    );
+    
+    if (Object.keys(filteredUpdates).length === 0) {
+      // No valid updates, return existing vehicle
+      const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, id));
+      return vehicle as Vehicle;
+    }
+    
     const [updatedVehicle] = await db
       .update(vehicles)
-      .set(updates)
+      .set(filteredUpdates)
       .where(eq(vehicles.id, id))
       .returning();
     return updatedVehicle;
