@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -181,8 +182,24 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   const [openRecord, setOpenRecord] = useState(false);
 
   // Forms setup
-  const reminderForm = useForm({ resolver: zodResolver(insertServiceReminderSchema.omit({ vehicleId: true })) });
-  const recordForm = useForm({ resolver: zodResolver(insertServiceRecordSchema.omit({ vehicleId: true })) });
+  const reminderForm = useForm({ 
+    resolver: zodResolver(insertServiceReminderSchema.omit({ vehicleId: true })),
+    defaultValues: {
+      serviceType: "",
+      intervalMileage: undefined,
+      intervalMonths: undefined,
+    }
+  });
+  const recordForm = useForm({ 
+    resolver: zodResolver(insertServiceRecordSchema.omit({ vehicleId: true })),
+    defaultValues: {
+      description: "",
+      cost: 0,
+      mileage: 0,
+      date: new Date(),
+      provider: "",
+    }
+  });
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
@@ -201,7 +218,14 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
             <DialogContent>
               <DialogHeader><DialogTitle>Add Reminder</DialogTitle></DialogHeader>
               <Form {...reminderForm}>
-                <form onSubmit={reminderForm.handleSubmit((d) => createReminder.mutate({ vehicleId, ...d } as any, { onSuccess: () => setOpenReminder(false) }))} className="space-y-4">
+                <form onSubmit={reminderForm.handleSubmit((d) => {
+                  createReminder.mutate({ vehicleId, ...d } as any, { 
+                    onSuccess: () => {
+                      setOpenReminder(false);
+                      reminderForm.reset();
+                    }
+                  });
+                })} className="space-y-4">
                   <FormField control={reminderForm.control} name="serviceType" render={({ field }) => (
                     <FormItem><FormLabel>Service Type</FormLabel><FormControl><Input placeholder="Oil Change" {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
@@ -256,7 +280,18 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
             <DialogContent>
               <DialogHeader><DialogTitle>Add Service Record</DialogTitle></DialogHeader>
               <Form {...recordForm}>
-                <form onSubmit={recordForm.handleSubmit((d) => createRecord.mutate({ vehicleId, ...d } as any, { onSuccess: () => setOpenRecord(false) }))} className="space-y-4">
+                <form onSubmit={recordForm.handleSubmit((d) => {
+                  const data = {
+                    ...d,
+                    date: d.date instanceof Date ? d.date.toISOString() : d.date
+                  };
+                  createRecord.mutate({ vehicleId, ...data } as any, { 
+                    onSuccess: () => {
+                      setOpenRecord(false);
+                      recordForm.reset();
+                    }
+                  });
+                })} className="space-y-4">
                   <FormField control={recordForm.control} name="description" render={({ field }) => (
                     <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Replaced brake pads" {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
@@ -325,7 +360,16 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
   const { data: transactions } = useTransactions(vehicleId);
   const createTx = useCreateTransaction();
   const [open, setOpen] = useState(false);
-  const form = useForm({ resolver: zodResolver(insertTransactionSchema.omit({ vehicleId: true })) });
+  const form = useForm({ 
+    resolver: zodResolver(insertTransactionSchema.omit({ vehicleId: true })),
+    defaultValues: {
+      type: "expense",
+      category: "",
+      amount: 0,
+      description: "",
+      date: new Date(),
+    }
+  });
 
   const data = [
     { name: 'Income', value: transactions?.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0) || 0 },
@@ -344,7 +388,18 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
               <DialogContent>
                 <DialogHeader><DialogTitle>Add Transaction</DialogTitle></DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit((d) => createTx.mutate({ vehicleId, ...d } as any, { onSuccess: () => setOpen(false) }))} className="space-y-4">
+                  <form onSubmit={form.handleSubmit((d) => {
+                    const data = {
+                      ...d,
+                      date: d.date instanceof Date ? d.date.toISOString() : d.date
+                    };
+                    createTx.mutate({ vehicleId, ...data } as any, { 
+                      onSuccess: () => {
+                        setOpen(false);
+                        form.reset();
+                      }
+                    });
+                  })} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <FormField control={form.control} name="type" render={({ field }) => (
                         <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent><SelectItem value="income">Income</SelectItem><SelectItem value="expense">Expense</SelectItem></SelectContent></Select><FormMessage /></FormItem>
@@ -430,7 +485,17 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
   const createPolicy = useCreateInsurance();
   const deletePolicy = useDeleteInsurance();
   const [open, setOpen] = useState(false);
-  const form = useForm({ resolver: zodResolver(insertInsurancePolicySchema.omit({ vehicleId: true })) });
+  const form = useForm({ 
+    resolver: zodResolver(insertInsurancePolicySchema.omit({ vehicleId: true })),
+    defaultValues: {
+      provider: "",
+      policyNumber: "",
+      coverageDetails: "",
+      startDate: new Date(),
+      endDate: new Date(),
+      premiumAmount: 0,
+    }
+  });
 
   return (
     <Card>
@@ -441,7 +506,19 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
           <DialogContent>
             <DialogHeader><DialogTitle>Add Policy</DialogTitle></DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((d) => createPolicy.mutate({ vehicleId, ...d } as any, { onSuccess: () => setOpen(false) }))} className="space-y-4">
+              <form onSubmit={form.handleSubmit((d) => {
+                const data = {
+                  ...d,
+                  startDate: d.startDate instanceof Date ? d.startDate.toISOString() : d.startDate,
+                  endDate: d.endDate instanceof Date ? d.endDate.toISOString() : d.endDate,
+                };
+                createPolicy.mutate({ vehicleId, ...data } as any, { 
+                  onSuccess: () => {
+                    setOpen(false);
+                    form.reset();
+                  }
+                });
+              })} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="provider" render={({ field }) => (
                     <FormItem><FormLabel>Provider</FormLabel><FormControl><Input placeholder="Geico" {...field} /></FormControl><FormMessage /></FormItem>
