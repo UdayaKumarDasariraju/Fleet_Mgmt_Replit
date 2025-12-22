@@ -1,5 +1,5 @@
 import { useVehicle, useDeleteVehicle, useUpdateVehicle } from "@/hooks/use-vehicles";
-import { useReminders, useCreateReminder, useDeleteReminder } from "@/hooks/use-reminders";
+import { useReminders, useCreateReminder, useDeleteReminder, useUpdateReminder } from "@/hooks/use-reminders";
 import { useRecords, useCreateRecord, useDeleteRecord, useUpdateRecord } from "@/hooks/use-records";
 import { useTransactions, useCreateTransaction, useDeleteTransaction, useUpdateTransaction } from "@/hooks/use-transactions";
 import { useInsurancePolicies, useCreateInsurance, useDeleteInsurance, useUpdateInsurance } from "@/hooks/use-insurance";
@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Calendar as CalendarIcon, MoreVertical, Plus, Trash2, CheckCircle, AlertCircle, FileText, DollarSign, PenTool } from "lucide-react";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertServiceReminderSchema, insertServiceRecordSchema, insertTransactionSchema, insertInsurancePolicySchema } from "@shared/routes";
@@ -186,6 +186,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   const { data: records } = useRecords(vehicleId);
   const createReminder = useCreateReminder();
   const deleteReminder = useDeleteReminder();
+  const updateReminder = useUpdateReminder();
   const createRecord = useCreateRecord();
   const deleteRecord = useDeleteRecord();
   const updateRecord = useUpdateRecord();
@@ -193,6 +194,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   const [openReminder, setOpenReminder] = useState(false);
   const [openRecord, setOpenRecord] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editingReminder, setEditingReminder] = useState<any>(null);
 
   // Forms setup
   const reminderForm = useForm({ 
@@ -205,7 +207,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   });
   const recordForm = useForm({ 
     resolver: zodResolver(insertServiceRecordSchema.omit({ vehicleId: true })),
-    defaultValues: editingRecord || {
+    defaultValues: {
       description: "",
       cost: 0,
       mileage: 0,
@@ -213,6 +215,44 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
       provider: "",
     }
   });
+
+  // Update reminder form when editing
+  useEffect(() => {
+    if (editingReminder) {
+      reminderForm.reset({
+        serviceType: editingReminder.serviceType,
+        intervalMileage: editingReminder.intervalMileage,
+        intervalMonths: editingReminder.intervalMonths,
+      });
+    } else {
+      reminderForm.reset({
+        serviceType: "",
+        intervalMileage: undefined,
+        intervalMonths: undefined,
+      });
+    }
+  }, [editingReminder, reminderForm]);
+
+  // Update record form when editing
+  useEffect(() => {
+    if (editingRecord) {
+      recordForm.reset({
+        description: editingRecord.description,
+        cost: editingRecord.cost,
+        mileage: editingRecord.mileage,
+        date: new Date(editingRecord.date),
+        provider: editingRecord.provider,
+      });
+    } else {
+      recordForm.reset({
+        description: "",
+        cost: 0,
+        mileage: 0,
+        date: new Date(),
+        provider: "",
+      });
+    }
+  }, [editingRecord, recordForm]);
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
@@ -229,15 +269,25 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
           <Dialog open={openReminder} onOpenChange={setOpenReminder}>
             <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4" /></Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Add Reminder</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{editingReminder ? 'Edit Service Reminder' : 'Add Reminder'}</DialogTitle></DialogHeader>
               <Form {...reminderForm}>
                 <form onSubmit={reminderForm.handleSubmit((d) => {
-                  createReminder.mutate({ vehicleId, ...d } as any, { 
-                    onSuccess: () => {
-                      setOpenReminder(false);
-                      reminderForm.reset();
-                    }
-                  });
+                  if (editingReminder) {
+                    updateReminder.mutate({ id: editingReminder.id, vehicleId, ...d } as any, { 
+                      onSuccess: () => {
+                        setOpenReminder(false);
+                        setEditingReminder(null);
+                        reminderForm.reset();
+                      }
+                    });
+                  } else {
+                    createReminder.mutate({ vehicleId, ...d } as any, { 
+                      onSuccess: () => {
+                        setOpenReminder(false);
+                        reminderForm.reset();
+                      }
+                    });
+                  }
                 })} className="space-y-4">
                   <FormField control={reminderForm.control} name="serviceType" render={({ field }) => (
                     <FormItem><FormLabel>Service Type</FormLabel><FormControl><Input placeholder="Oil Change" {...field} /></FormControl><FormMessage /></FormItem>
@@ -250,7 +300,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                       <FormItem><FormLabel>Interval (Months)</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl><FormMessage /></FormItem>
                     )} />
                   </div>
-                  <Button type="submit" className="w-full">Create Reminder</Button>
+                  <Button type="submit" className="w-full">{editingReminder ? 'Update Reminder' : 'Create Reminder'}</Button>
                 </form>
               </Form>
             </DialogContent>
@@ -269,9 +319,14 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                   </div>
                   {reminder.description && <div className="text-xs text-muted-foreground mt-2">{reminder.description}</div>}
                 </div>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deleteReminder.mutate({ id: reminder.id, vehicleId })} data-testid="button-delete-reminder">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-blue-600" onClick={() => { setEditingReminder(reminder); setOpenReminder(true); }} data-testid="button-edit-reminder">
+                    <PenTool className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deleteReminder.mutate({ id: reminder.id, vehicleId })} data-testid="button-delete-reminder">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
             {reminders?.length === 0 && <p className="text-center text-muted-foreground py-8">No active reminders.</p>}
@@ -397,7 +452,7 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
   const [editingTx, setEditingTx] = useState<any>(null);
   const form = useForm({ 
     resolver: zodResolver(insertTransactionSchema.omit({ vehicleId: true })),
-    defaultValues: editingTx || {
+    defaultValues: {
       type: "expense",
       category: "",
       amount: 0,
@@ -405,6 +460,27 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
       date: new Date(),
     }
   });
+
+  // Update transaction form when editing
+  useEffect(() => {
+    if (editingTx) {
+      form.reset({
+        type: editingTx.type,
+        category: editingTx.category,
+        amount: editingTx.amount,
+        description: editingTx.description,
+        date: new Date(editingTx.date),
+      });
+    } else {
+      form.reset({
+        type: "expense",
+        category: "",
+        amount: 0,
+        description: "",
+        date: new Date(),
+      });
+    }
+  }, [editingTx, form]);
 
   const data = [
     { name: 'Income', value: transactions?.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0) || 0 },
@@ -543,7 +619,7 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
   const [editingPolicy, setEditingPolicy] = useState<any>(null);
   const form = useForm({ 
     resolver: zodResolver(insertInsurancePolicySchema.omit({ vehicleId: true })),
-    defaultValues: editingPolicy || {
+    defaultValues: {
       provider: "",
       policyNumber: "",
       coverageDetails: "",
@@ -552,6 +628,29 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
       premiumAmount: 0,
     }
   });
+
+  // Update policy form when editing
+  useEffect(() => {
+    if (editingPolicy) {
+      form.reset({
+        provider: editingPolicy.provider,
+        policyNumber: editingPolicy.policyNumber,
+        coverageDetails: editingPolicy.coverageDetails,
+        startDate: new Date(editingPolicy.startDate),
+        endDate: new Date(editingPolicy.endDate),
+        premiumAmount: editingPolicy.premiumAmount,
+      });
+    } else {
+      form.reset({
+        provider: "",
+        policyNumber: "",
+        coverageDetails: "",
+        startDate: new Date(),
+        endDate: new Date(),
+        premiumAmount: 0,
+      });
+    }
+  }, [editingPolicy, form]);
 
   return (
     <Card>
