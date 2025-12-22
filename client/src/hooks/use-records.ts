@@ -36,3 +36,20 @@ export function useCreateRecord() {
     },
   });
 }
+
+export function useDeleteRecord() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, vehicleId }: { id: number; vehicleId: number }) => {
+      const url = buildUrl(api.records.delete.path, { id });
+      const res = await fetch(url, {
+        method: api.records.delete.method,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete service record");
+    },
+    onSuccess: (_, { vehicleId }) => {
+      queryClient.invalidateQueries({ queryKey: [api.records.list.path, vehicleId] });
+    },
+  });
+}

@@ -1,7 +1,7 @@
 import { useVehicle, useDeleteVehicle, useUpdateVehicle } from "@/hooks/use-vehicles";
 import { useReminders, useCreateReminder, useDeleteReminder } from "@/hooks/use-reminders";
-import { useRecords, useCreateRecord } from "@/hooks/use-records";
-import { useTransactions, useCreateTransaction } from "@/hooks/use-transactions";
+import { useRecords, useCreateRecord, useDeleteRecord } from "@/hooks/use-records";
+import { useTransactions, useCreateTransaction, useDeleteTransaction } from "@/hooks/use-transactions";
 import { useInsurancePolicies, useCreateInsurance, useDeleteInsurance } from "@/hooks/use-insurance";
 import { useRoute, useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -187,6 +187,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   const createReminder = useCreateReminder();
   const deleteReminder = useDeleteReminder();
   const createRecord = useCreateRecord();
+  const deleteRecord = useDeleteRecord();
   
   const [openReminder, setOpenReminder] = useState(false);
   const [openRecord, setOpenRecord] = useState(false);
@@ -264,8 +265,9 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                     {reminder.nextDueMileage && reminder.nextDueDate && <span>•</span>}
                     {reminder.nextDueDate && <span>Due on {format(new Date(reminder.nextDueDate), "MMM d, yyyy")}</span>}
                   </div>
+                  {reminder.description && <div className="text-xs text-muted-foreground mt-2">{reminder.description}</div>}
                 </div>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deleteReminder.mutate({ id: reminder.id, vehicleId })}>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deleteReminder.mutate({ id: reminder.id, vehicleId })} data-testid="button-delete-reminder">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -347,13 +349,18 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
               <div key={record.id} className="relative pl-6">
                 <div className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-primary border border-background" />
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                   <div>
+                   <div className="flex-1">
                      <p className="font-semibold text-sm">{record.description}</p>
                      <p className="text-xs text-muted-foreground">{format(new Date(record.date), 'MMM d, yyyy')} • {record.provider || 'Unknown Provider'}</p>
                    </div>
-                   <div className="text-right mt-1 sm:mt-0">
-                     <p className="font-mono font-bold text-sm">{(record.cost / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
-                     <p className="text-xs text-muted-foreground">{record.mileage.toLocaleString()} km</p>
+                   <div className="text-right mt-1 sm:mt-0 flex items-center gap-2">
+                     <div>
+                       <p className="font-mono font-bold text-sm">₹ {(record.cost / 100).toLocaleString('en-IN')}</p>
+                       <p className="text-xs text-muted-foreground">{record.mileage.toLocaleString()} km</p>
+                     </div>
+                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deleteRecord.mutate({ id: record.id, vehicleId })} data-testid="button-delete-record">
+                       <Trash2 className="w-4 h-4" />
+                     </Button>
                    </div>
                 </div>
               </div>
@@ -369,6 +376,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
 function FinancialsTab({ vehicleId }: { vehicleId: number }) {
   const { data: transactions } = useTransactions(vehicleId);
   const createTx = useCreateTransaction();
+  const deleteTx = useDeleteTransaction();
   const [open, setOpen] = useState(false);
   const form = useForm({ 
     resolver: zodResolver(insertTransactionSchema.omit({ vehicleId: true })),
@@ -441,6 +449,7 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -450,11 +459,16 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                     <TableCell className="capitalize"><Badge variant="outline">{t.category}</Badge></TableCell>
                     <TableCell>{t.description || '-'}</TableCell>
                     <TableCell className={cn("text-right font-mono", t.type === 'income' ? 'text-green-600' : 'text-red-600')}>
-                      {t.type === 'income' ? '+' : '-'}{(t.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                      {t.type === 'income' ? '+' : '-'}₹ {(t.amount / 100).toLocaleString('en-IN')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deleteTx.mutate({ id: t.id, vehicleId })} data-testid="button-delete-transaction">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
-                {transactions?.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground h-24">No transactions recorded</TableCell></TableRow>}
+                {transactions?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground h-24">No transactions recorded</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent>
@@ -475,7 +489,7 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => (value/100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+                  <Tooltip formatter={(value: number) => `₹ ${(value/100).toLocaleString('en-IN')}`} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -573,7 +587,7 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
                  </div>
                  <div className="flex justify-between text-sm">
                    <span>Premium</span>
-                   <span className="font-bold">{(policy.premiumAmount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                   <span className="font-bold">₹ {(policy.premiumAmount / 100).toLocaleString('en-IN')}</span>
                  </div>
                </CardContent>
              </Card>

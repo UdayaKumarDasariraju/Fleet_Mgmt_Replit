@@ -183,6 +183,11 @@ export async function registerRoutes(
     }
   });
 
+  app.delete(api.records.delete.path, isAuthenticated, async (req, res) => {
+    await storage.deleteServiceRecord(parseInt(req.params.id));
+    res.status(204).send();
+  });
+
   // === Transactions ===
   app.get(api.transactions.list.path, isAuthenticated, ensureVehicleOwnership, async (req, res) => {
     const txs = await storage.getTransactions((req as any).vehicle.id);
@@ -204,6 +209,11 @@ export async function registerRoutes(
       }
       throw err;
     }
+  });
+
+  app.delete(api.transactions.delete.path, isAuthenticated, async (req, res) => {
+    await storage.deleteTransaction(parseInt(req.params.id));
+    res.status(204).send();
   });
 
   // === Dashboard ===

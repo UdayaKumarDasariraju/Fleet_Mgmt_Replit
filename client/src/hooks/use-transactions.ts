@@ -34,3 +34,21 @@ export function useCreateTransaction() {
     },
   });
 }
+
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, vehicleId }: { id: number; vehicleId: number }) => {
+      const url = buildUrl(api.transactions.delete.path, { id });
+      const res = await fetch(url, {
+        method: api.transactions.delete.method,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete transaction");
+    },
+    onSuccess: (_, { vehicleId }) => {
+      queryClient.invalidateQueries({ queryKey: [api.transactions.list.path, vehicleId] });
+      queryClient.invalidateQueries({ queryKey: [api.dashboard.stats.path] });
+    },
+  });
+}
