@@ -97,7 +97,12 @@ export async function registerRoutes(
 
   app.post(api.insurance.create.path, isAuthenticated, ensureVehicleOwnership, async (req, res) => {
     try {
-      const input = api.insurance.create.input.parse(req.body);
+      const body = {
+        ...req.body,
+        startDate: req.body.startDate instanceof Date ? req.body.startDate : new Date(req.body.startDate),
+        endDate: req.body.endDate instanceof Date ? req.body.endDate : new Date(req.body.endDate),
+      };
+      const input = api.insurance.create.input.parse(body);
       const policy = await storage.createInsurancePolicy({ ...input, vehicleId: (req as any).vehicle.id });
       res.status(201).json(policy);
     } catch (err) {
@@ -163,7 +168,11 @@ export async function registerRoutes(
 
   app.post(api.records.create.path, isAuthenticated, ensureVehicleOwnership, async (req, res) => {
     try {
-      const input = api.records.create.input.parse(req.body);
+      const body = {
+        ...req.body,
+        date: req.body.date instanceof Date ? req.body.date : new Date(req.body.date),
+      };
+      const input = api.records.create.input.parse(body);
       const record = await storage.createServiceRecord({ ...input, vehicleId: (req as any).vehicle.id });
       res.status(201).json(record);
     } catch (err) {
@@ -182,7 +191,11 @@ export async function registerRoutes(
 
   app.post(api.transactions.create.path, isAuthenticated, ensureVehicleOwnership, async (req, res) => {
     try {
-      const input = api.transactions.create.input.parse(req.body);
+      const body = {
+        ...req.body,
+        date: req.body.date instanceof Date ? req.body.date : new Date(req.body.date),
+      };
+      const input = api.transactions.create.input.parse(body);
       const tx = await storage.createTransaction({ ...input, vehicleId: (req as any).vehicle.id });
       res.status(201).json(tx);
     } catch (err) {
