@@ -33,10 +33,12 @@ export interface IStorage {
   // Records
   getServiceRecords(vehicleId: number): Promise<ServiceRecord[]>;
   createServiceRecord(record: InsertServiceRecord): Promise<ServiceRecord>;
+  deleteServiceRecord(id: number): Promise<void>;
 
   // Transactions
   getTransactions(vehicleId: number): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  deleteTransaction(id: number): Promise<void>;
 
   // Stats
   getDashboardStats(userId: string): Promise<DashboardStats>;
@@ -138,6 +140,10 @@ export class DatabaseStorage implements IStorage {
     return newRecord;
   }
 
+  async deleteServiceRecord(id: number): Promise<void> {
+    await db.delete(serviceRecords).where(eq(serviceRecords.id, id));
+  }
+
   async getTransactions(vehicleId: number): Promise<Transaction[]> {
     return await db.select()
       .from(transactions)
@@ -148,6 +154,10 @@ export class DatabaseStorage implements IStorage {
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
     const [newTx] = await db.insert(transactions).values(transaction).returning();
     return newTx;
+  }
+
+  async deleteTransaction(id: number): Promise<void> {
+    await db.delete(transactions).where(eq(transactions.id, id));
   }
 
   async getDashboardStats(userId: string): Promise<DashboardStats> {
