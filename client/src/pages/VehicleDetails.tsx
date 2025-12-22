@@ -376,7 +376,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                   )} />
                    <div className="grid grid-cols-2 gap-4">
                     <FormField control={recordForm.control} name="cost" render={({ field }) => (
-                      <FormItem><FormLabel>Cost (cents)</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Cost (₹)</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(Math.round(parseFloat(e.target.value) * 100))} value={field.value ? (field.value / 100).toFixed(2) : ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={recordForm.control} name="mileage" render={({ field }) => (
                       <FormItem><FormLabel>Mileage</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl><FormMessage /></FormItem>
@@ -422,7 +422,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                    </div>
                    <div className="text-right mt-1 sm:mt-0 flex items-center gap-2">
                      <div>
-                       <p className="font-mono font-bold text-sm">₹ {(record.cost / 100).toLocaleString('en-IN')}</p>
+                       <p className="font-mono font-bold text-sm">₹ {(record.cost / 100).toFixed(2)}</p>
                        <p className="text-xs text-muted-foreground">{record.mileage.toLocaleString()} km</p>
                      </div>
                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-blue-600" onClick={() => { setEditingRecord(record); setOpenRecord(true); }} data-testid="button-edit-record">
@@ -530,7 +530,7 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                       )} />
                     </div>
                     <FormField control={form.control} name="amount" render={({ field }) => (
-                      <FormItem><FormLabel>Amount (cents)</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Amount (₹)</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(Math.round(parseFloat(e.target.value) * 100))} value={field.value ? (field.value / 100).toFixed(2) : ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="description" render={({ field }) => (
                         <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Optional details" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
@@ -562,7 +562,7 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                     <TableCell className="capitalize"><Badge variant="outline">{t.category}</Badge></TableCell>
                     <TableCell>{t.description || '-'}</TableCell>
                     <TableCell className={cn("text-right font-mono", t.type === 'income' ? 'text-green-600' : 'text-red-600')}>
-                      {t.type === 'income' ? '+' : '-'}₹ {(t.amount / 100).toLocaleString('en-IN')}
+                      {t.type === 'income' ? '+' : '-'}₹ {(t.amount / 100).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right flex gap-2 justify-end">
                       <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-blue-600" onClick={() => { setEditingTx(t); setOpen(true); }} data-testid="button-edit-transaction">
@@ -595,7 +595,7 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `₹ ${(value/100).toLocaleString('en-IN')}`} />
+                  <Tooltip formatter={(value: number) => `₹ ${(value/100).toFixed(2)}`} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -693,7 +693,7 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
                   )} />
                 </div>
                  <FormField control={form.control} name="premiumAmount" render={({ field }) => (
-                    <FormItem><FormLabel>Premium (cents)</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Premium (₹)</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(Math.round(parseFloat(e.target.value) * 100))} value={field.value ? (field.value / 100).toFixed(2) : ''} /></FormControl><FormMessage /></FormItem>
                   )} />
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="startDate" render={({ field }) => (
@@ -733,7 +733,7 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
                  </div>
                  <div className="flex justify-between text-sm">
                    <span>Premium</span>
-                   <span className="font-bold">₹ {(policy.premiumAmount / 100).toLocaleString('en-IN')}</span>
+                   <span className="font-bold">₹ {(policy.premiumAmount / 100).toFixed(2)}</span>
                  </div>
                </CardContent>
              </Card>
