@@ -22,6 +22,7 @@ export interface IStorage {
   // Insurance
   getInsurancePolicies(vehicleId: number): Promise<InsurancePolicy[]>;
   createInsurancePolicy(policy: InsertInsurancePolicy): Promise<InsurancePolicy>;
+  updateInsurancePolicy(id: number, updates: Partial<InsertInsurancePolicy>): Promise<InsurancePolicy>;
   deleteInsurancePolicy(id: number): Promise<void>;
 
   // Reminders
@@ -33,11 +34,13 @@ export interface IStorage {
   // Records
   getServiceRecords(vehicleId: number): Promise<ServiceRecord[]>;
   createServiceRecord(record: InsertServiceRecord): Promise<ServiceRecord>;
+  updateServiceRecord(id: number, updates: Partial<InsertServiceRecord>): Promise<ServiceRecord>;
   deleteServiceRecord(id: number): Promise<void>;
 
   // Transactions
   getTransactions(vehicleId: number): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransaction(id: number, updates: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: number): Promise<void>;
 
   // Stats
@@ -99,6 +102,15 @@ export class DatabaseStorage implements IStorage {
     return newPolicy;
   }
 
+  async updateInsurancePolicy(id: number, updates: Partial<InsertInsurancePolicy>): Promise<InsurancePolicy> {
+    const [updated] = await db
+      .update(insurancePolicies)
+      .set(updates)
+      .where(eq(insurancePolicies.id, id))
+      .returning();
+    return updated;
+  }
+
   async deleteInsurancePolicy(id: number): Promise<void> {
     await db.delete(insurancePolicies).where(eq(insurancePolicies.id, id));
   }
@@ -140,6 +152,15 @@ export class DatabaseStorage implements IStorage {
     return newRecord;
   }
 
+  async updateServiceRecord(id: number, updates: Partial<InsertServiceRecord>): Promise<ServiceRecord> {
+    const [updated] = await db
+      .update(serviceRecords)
+      .set(updates)
+      .where(eq(serviceRecords.id, id))
+      .returning();
+    return updated;
+  }
+
   async deleteServiceRecord(id: number): Promise<void> {
     await db.delete(serviceRecords).where(eq(serviceRecords.id, id));
   }
@@ -154,6 +175,15 @@ export class DatabaseStorage implements IStorage {
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
     const [newTx] = await db.insert(transactions).values(transaction).returning();
     return newTx;
+  }
+
+  async updateTransaction(id: number, updates: Partial<InsertTransaction>): Promise<Transaction> {
+    const [updated] = await db
+      .update(transactions)
+      .set(updates)
+      .where(eq(transactions.id, id))
+      .returning();
+    return updated;
   }
 
   async deleteTransaction(id: number): Promise<void> {

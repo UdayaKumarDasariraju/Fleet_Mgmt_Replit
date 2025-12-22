@@ -35,6 +35,27 @@ export function useCreateTransaction() {
   });
 }
 
+export function useUpdateTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, vehicleId, ...data }: { id: number; vehicleId: number } & Partial<Omit<InsertTransaction, 'vehicleId'>>) => {
+      const url = buildUrl(api.transactions.update.path, { id });
+      const res = await fetch(url, {
+        method: api.transactions.update.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update transaction");
+      return api.transactions.update.responses[200].parse(await res.json());
+    },
+    onSuccess: (_, { vehicleId }) => {
+      queryClient.invalidateQueries({ queryKey: [api.transactions.list.path, vehicleId] });
+      queryClient.invalidateQueries({ queryKey: [api.dashboard.stats.path] });
+    },
+  });
+}
+
 export function useDeleteTransaction() {
   const queryClient = useQueryClient();
   return useMutation({

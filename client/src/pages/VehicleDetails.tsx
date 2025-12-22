@@ -1,8 +1,8 @@
 import { useVehicle, useDeleteVehicle, useUpdateVehicle } from "@/hooks/use-vehicles";
 import { useReminders, useCreateReminder, useDeleteReminder } from "@/hooks/use-reminders";
-import { useRecords, useCreateRecord, useDeleteRecord } from "@/hooks/use-records";
-import { useTransactions, useCreateTransaction, useDeleteTransaction } from "@/hooks/use-transactions";
-import { useInsurancePolicies, useCreateInsurance, useDeleteInsurance } from "@/hooks/use-insurance";
+import { useRecords, useCreateRecord, useDeleteRecord, useUpdateRecord } from "@/hooks/use-records";
+import { useTransactions, useCreateTransaction, useDeleteTransaction, useUpdateTransaction } from "@/hooks/use-transactions";
+import { useInsurancePolicies, useCreateInsurance, useDeleteInsurance, useUpdateInsurance } from "@/hooks/use-insurance";
 import { useRoute, useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -188,9 +188,11 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   const deleteReminder = useDeleteReminder();
   const createRecord = useCreateRecord();
   const deleteRecord = useDeleteRecord();
+  const updateRecord = useUpdateRecord();
   
   const [openReminder, setOpenReminder] = useState(false);
   const [openRecord, setOpenRecord] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
 
   // Forms setup
   const reminderForm = useForm({ 
@@ -203,7 +205,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   });
   const recordForm = useForm({ 
     resolver: zodResolver(insertServiceRecordSchema.omit({ vehicleId: true })),
-    defaultValues: {
+    defaultValues: editingRecord || {
       description: "",
       cost: 0,
       mileage: 0,
@@ -290,19 +292,29 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
           <Dialog open={openRecord} onOpenChange={setOpenRecord}>
             <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4" /></Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Add Service Record</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{editingRecord ? 'Edit Service Record' : 'Add Service Record'}</DialogTitle></DialogHeader>
               <Form {...recordForm}>
                 <form onSubmit={recordForm.handleSubmit((d) => {
                   const data = {
                     ...d,
                     date: d.date instanceof Date ? d.date.toISOString() : d.date
                   };
-                  createRecord.mutate({ vehicleId, ...data } as any, { 
-                    onSuccess: () => {
-                      setOpenRecord(false);
-                      recordForm.reset();
-                    }
-                  });
+                  if (editingRecord) {
+                    updateRecord.mutate({ id: editingRecord.id, vehicleId, ...data } as any, { 
+                      onSuccess: () => {
+                        setOpenRecord(false);
+                        setEditingRecord(null);
+                        recordForm.reset();
+                      }
+                    });
+                  } else {
+                    createRecord.mutate({ vehicleId, ...data } as any, { 
+                      onSuccess: () => {
+                        setOpenRecord(false);
+                        recordForm.reset();
+                      }
+                    });
+                  }
                 })} className="space-y-4">
                   <FormField control={recordForm.control} name="description" render={({ field }) => (
                     <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Replaced brake pads" {...field} /></FormControl><FormMessage /></FormItem>
@@ -337,7 +349,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                    <FormField control={recordForm.control} name="provider" render={({ field }) => (
                     <FormItem><FormLabel>Provider (Optional)</FormLabel><FormControl><Input placeholder="Jiffy Lube" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                   )} />
-                  <Button type="submit" className="w-full">Save Record</Button>
+                  <Button type="submit" className="w-full">{editingRecord ? 'Update Record' : 'Save Record'}</Button>
                 </form>
               </Form>
             </DialogContent>
@@ -358,6 +370,9 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                        <p className="font-mono font-bold text-sm">₹ {(record.cost / 100).toLocaleString('en-IN')}</p>
                        <p className="text-xs text-muted-foreground">{record.mileage.toLocaleString()} km</p>
                      </div>
+                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-blue-600" onClick={() => { setEditingRecord(record); setOpenRecord(true); }} data-testid="button-edit-record">
+                       <PenTool className="w-4 h-4" />
+                     </Button>
                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deleteRecord.mutate({ id: record.id, vehicleId })} data-testid="button-delete-record">
                        <Trash2 className="w-4 h-4" />
                      </Button>
@@ -377,10 +392,12 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
   const { data: transactions } = useTransactions(vehicleId);
   const createTx = useCreateTransaction();
   const deleteTx = useDeleteTransaction();
+  const updateTx = useUpdateTransaction();
   const [open, setOpen] = useState(false);
+  const [editingTx, setEditingTx] = useState<any>(null);
   const form = useForm({ 
     resolver: zodResolver(insertTransactionSchema.omit({ vehicleId: true })),
-    defaultValues: {
+    defaultValues: editingTx || {
       type: "expense",
       category: "",
       amount: 0,
@@ -404,19 +421,29 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm">Add Transaction</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Add Transaction</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{editingTx ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle></DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit((d) => {
                     const data = {
                       ...d,
                       date: d.date instanceof Date ? d.date.toISOString() : d.date
                     };
-                    createTx.mutate({ vehicleId, ...data } as any, { 
-                      onSuccess: () => {
-                        setOpen(false);
-                        form.reset();
-                      }
-                    });
+                    if (editingTx) {
+                      updateTx.mutate({ id: editingTx.id, vehicleId, ...data } as any, { 
+                        onSuccess: () => {
+                          setOpen(false);
+                          setEditingTx(null);
+                          form.reset();
+                        }
+                      });
+                    } else {
+                      createTx.mutate({ vehicleId, ...data } as any, { 
+                        onSuccess: () => {
+                          setOpen(false);
+                          form.reset();
+                        }
+                      });
+                    }
                   })} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <FormField control={form.control} name="type" render={({ field }) => (
@@ -435,7 +462,7 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                      <FormField control={form.control} name="date" render={({ field }) => (
                         <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
                       )} />
-                    <Button type="submit" className="w-full">Save</Button>
+                    <Button type="submit" className="w-full">{editingTx ? 'Update Transaction' : 'Save'}</Button>
                   </form>
                 </Form>
               </DialogContent>
@@ -461,7 +488,10 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                     <TableCell className={cn("text-right font-mono", t.type === 'income' ? 'text-green-600' : 'text-red-600')}>
                       {t.type === 'income' ? '+' : '-'}₹ {(t.amount / 100).toLocaleString('en-IN')}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right flex gap-2 justify-end">
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-blue-600" onClick={() => { setEditingTx(t); setOpen(true); }} data-testid="button-edit-transaction">
+                        <PenTool className="w-4 h-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deleteTx.mutate({ id: t.id, vehicleId })} data-testid="button-delete-transaction">
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -508,10 +538,12 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
   const { data: policies } = useInsurancePolicies(vehicleId);
   const createPolicy = useCreateInsurance();
   const deletePolicy = useDeleteInsurance();
+  const updatePolicy = useUpdateInsurance();
   const [open, setOpen] = useState(false);
+  const [editingPolicy, setEditingPolicy] = useState<any>(null);
   const form = useForm({ 
     resolver: zodResolver(insertInsurancePolicySchema.omit({ vehicleId: true })),
-    defaultValues: {
+    defaultValues: editingPolicy || {
       provider: "",
       policyNumber: "",
       coverageDetails: "",
@@ -528,7 +560,7 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm">Add Policy</Button></DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Add Policy</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingPolicy ? 'Edit Policy' : 'Add Policy'}</DialogTitle></DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit((d) => {
                 const data = {
@@ -536,12 +568,22 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
                   startDate: d.startDate instanceof Date ? d.startDate.toISOString() : d.startDate,
                   endDate: d.endDate instanceof Date ? d.endDate.toISOString() : d.endDate,
                 };
-                createPolicy.mutate({ vehicleId, ...data } as any, { 
-                  onSuccess: () => {
-                    setOpen(false);
-                    form.reset();
-                  }
-                });
+                if (editingPolicy) {
+                  updatePolicy.mutate({ id: editingPolicy.id, vehicleId, ...data } as any, { 
+                    onSuccess: () => {
+                      setOpen(false);
+                      setEditingPolicy(null);
+                      form.reset();
+                    }
+                  });
+                } else {
+                  createPolicy.mutate({ vehicleId, ...data } as any, { 
+                    onSuccess: () => {
+                      setOpen(false);
+                      form.reset();
+                    }
+                  });
+                }
               })} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="provider" render={({ field }) => (
@@ -565,7 +607,7 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
                 <FormField control={form.control} name="coverageDetails" render={({ field }) => (
                     <FormItem><FormLabel>Details</FormLabel><FormControl><Input placeholder="Full coverage" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                   )} />
-                <Button type="submit" className="w-full">Save Policy</Button>
+                <Button type="submit" className="w-full">{editingPolicy ? 'Update Policy' : 'Save Policy'}</Button>
               </form>
             </Form>
           </DialogContent>
@@ -576,9 +618,14 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
           {policies?.map((policy) => (
              <Card key={policy.id} className="bg-secondary/20">
                <CardContent className="p-4 relative">
-                 <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => deletePolicy.mutate({ id: policy.id, vehicleId })}>
-                   <Trash2 className="w-4 h-4" />
-                 </Button>
+                 <div className="absolute top-2 right-2 flex gap-1">
+                   <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-blue-600" onClick={() => { setEditingPolicy(policy); setOpen(true); }} data-testid="button-edit-policy">
+                     <PenTool className="w-4 h-4" />
+                   </Button>
+                   <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => deletePolicy.mutate({ id: policy.id, vehicleId })} data-testid="button-delete-policy">
+                     <Trash2 className="w-4 h-4" />
+                   </Button>
+                 </div>
                  <div className="font-semibold text-lg">{policy.provider}</div>
                  <div className="text-sm text-muted-foreground font-mono mb-4">{policy.policyNumber}</div>
                  <div className="flex justify-between text-sm mb-2">

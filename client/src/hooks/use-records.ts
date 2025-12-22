@@ -37,6 +37,26 @@ export function useCreateRecord() {
   });
 }
 
+export function useUpdateRecord() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, vehicleId, ...data }: { id: number; vehicleId: number } & Partial<Omit<InsertServiceRecord, 'vehicleId'>>) => {
+      const url = buildUrl(api.records.update.path, { id });
+      const res = await fetch(url, {
+        method: api.records.update.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update service record");
+      return api.records.update.responses[200].parse(await res.json());
+    },
+    onSuccess: (_, { vehicleId }) => {
+      queryClient.invalidateQueries({ queryKey: [api.records.list.path, vehicleId] });
+    },
+  });
+}
+
 export function useDeleteRecord() {
   const queryClient = useQueryClient();
   return useMutation({

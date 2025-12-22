@@ -89,6 +89,16 @@ export const api = {
         400: errorSchemas.validation,
       },
     },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/insurance/:id',
+      input: insertInsurancePolicySchema.omit({ vehicleId: true }).partial(),
+      responses: {
+        200: z.custom<typeof insurancePolicies.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
     delete: {
       method: 'DELETE' as const,
       path: '/api/insurance/:id',
@@ -151,6 +161,16 @@ export const api = {
         400: errorSchemas.validation,
       },
     },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/records/:id',
+      input: insertServiceRecordSchema.omit({ vehicleId: true }).partial(),
+      responses: {
+        200: z.custom<typeof serviceRecords.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
     delete: {
       method: 'DELETE' as const,
       path: '/api/records/:id',
@@ -175,6 +195,16 @@ export const api = {
       responses: {
         201: z.custom<typeof transactions.$inferSelect>(),
         400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/transactions/:id',
+      input: insertTransactionSchema.omit({ vehicleId: true }).partial(),
+      responses: {
+        200: z.custom<typeof transactions.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
       },
     },
     delete: {

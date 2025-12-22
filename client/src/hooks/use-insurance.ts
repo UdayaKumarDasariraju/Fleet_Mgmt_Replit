@@ -36,6 +36,27 @@ export function useCreateInsurance() {
   });
 }
 
+export function useUpdateInsurance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, vehicleId, ...data }: { id: number; vehicleId: number } & Partial<Omit<InsertInsurancePolicy, 'vehicleId'>>) => {
+      const url = buildUrl(api.insurance.update.path, { id });
+      const res = await fetch(url, {
+        method: api.insurance.update.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update insurance policy");
+      return api.insurance.update.responses[200].parse(await res.json());
+    },
+    onSuccess: (_, { vehicleId }) => {
+      queryClient.invalidateQueries({ queryKey: [api.insurance.list.path, vehicleId] });
+      queryClient.invalidateQueries({ queryKey: [api.vehicles.get.path, vehicleId] });
+    },
+  });
+}
+
 export function useDeleteInsurance() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -113,6 +113,24 @@ export async function registerRoutes(
     }
   });
 
+  app.put(api.insurance.update.path, isAuthenticated, async (req, res) => {
+    try {
+      const body = {
+        ...req.body,
+        startDate: req.body.startDate instanceof Date ? req.body.startDate : (req.body.startDate ? new Date(req.body.startDate) : undefined),
+        endDate: req.body.endDate instanceof Date ? req.body.endDate : (req.body.endDate ? new Date(req.body.endDate) : undefined),
+      };
+      const input = api.insurance.update.input.parse(body);
+      const updated = await storage.updateInsurancePolicy(parseInt(req.params.id), input);
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      throw err;
+    }
+  });
+
   app.delete(api.insurance.delete.path, isAuthenticated, async (req, res) => {
     // Need to check ownership of the policy via vehicle... 
     // This requires looking up policy -> vehicle -> user.
@@ -183,6 +201,23 @@ export async function registerRoutes(
     }
   });
 
+  app.put(api.records.update.path, isAuthenticated, async (req, res) => {
+    try {
+      const body = {
+        ...req.body,
+        date: req.body.date instanceof Date ? req.body.date : (req.body.date ? new Date(req.body.date) : undefined),
+      };
+      const input = api.records.update.input.parse(body);
+      const updated = await storage.updateServiceRecord(parseInt(req.params.id), input);
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      throw err;
+    }
+  });
+
   app.delete(api.records.delete.path, isAuthenticated, async (req, res) => {
     await storage.deleteServiceRecord(parseInt(req.params.id));
     res.status(204).send();
@@ -205,6 +240,23 @@ export async function registerRoutes(
       res.status(201).json(tx);
     } catch (err) {
        if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      throw err;
+    }
+  });
+
+  app.put(api.transactions.update.path, isAuthenticated, async (req, res) => {
+    try {
+      const body = {
+        ...req.body,
+        date: req.body.date instanceof Date ? req.body.date : (req.body.date ? new Date(req.body.date) : undefined),
+      };
+      const input = api.transactions.update.input.parse(body);
+      const updated = await storage.updateTransaction(parseInt(req.params.id), input);
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });
       }
       throw err;
