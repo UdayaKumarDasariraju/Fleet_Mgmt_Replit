@@ -67,6 +67,7 @@ export function useUpdateVehicle() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: [api.vehicles.list.path] });
       queryClient.invalidateQueries({ queryKey: [api.vehicles.get.path, id] });
+      queryClient.invalidateQueries({ queryKey: [api.dashboard.stats.path] });
     },
   });
 }
