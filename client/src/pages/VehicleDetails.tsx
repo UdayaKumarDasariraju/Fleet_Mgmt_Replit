@@ -297,7 +297,13 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
             </CardTitle>
             <CardDescription>Upcoming maintenance tasks</CardDescription>
           </div>
-          <Dialog open={openReminder} onOpenChange={setOpenReminder}>
+          <Dialog open={openReminder} onOpenChange={(isOpen) => {
+            setOpenReminder(isOpen);
+            if (!isOpen) {
+              setEditingReminder(null);
+              reminderForm.reset();
+            }
+          }}>
             <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4" /></Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>{editingReminder ? 'Edit Service Reminder' : 'Add Reminder'}</DialogTitle></DialogHeader>
@@ -375,7 +381,13 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
             </CardTitle>
             <CardDescription>Past maintenance records</CardDescription>
           </div>
-          <Dialog open={openRecord} onOpenChange={setOpenRecord}>
+          <Dialog open={openRecord} onOpenChange={(isOpen) => {
+            setOpenRecord(isOpen);
+            if (!isOpen) {
+              setEditingRecord(null);
+              recordForm.reset();
+            }
+          }}>
             <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4" /></Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>{editingRecord ? 'Edit Service Record' : 'Add Service Record'}</DialogTitle></DialogHeader>
