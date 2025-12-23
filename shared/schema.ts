@@ -112,8 +112,7 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({ 
   id: true, 
   userId: true, // Set by backend
-  createdAt: true,
-  currentMileage: true // Typically updated via records or specific action
+  createdAt: true
 });
 
 export const insertInsurancePolicySchema = createInsertSchema(insurancePolicies).omit({ 
