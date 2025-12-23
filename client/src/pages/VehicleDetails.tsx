@@ -13,8 +13,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AmountInput } from "@/components/amount-input";
+import { CalendarWithSelector } from "@/components/calendar-with-selector";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Calendar as CalendarIcon, MoreVertical, Plus, Trash2, CheckCircle, AlertCircle, FileText, DollarSign, PenTool } from "lucide-react";
 import { format } from "date-fns";
@@ -406,7 +407,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                   )} />
                    <div className="grid grid-cols-2 gap-4">
                     <FormField control={recordForm.control} name="cost" render={({ field }) => (
-                      <FormItem><FormLabel>Cost (₹)</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(Math.round(parseFloat(e.target.value) * 100))} value={field.value ? (field.value / 100).toFixed(2) : ''} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Cost (₹)</FormLabel><FormControl><AmountInput value={field.value} onChange={field.onChange} placeholder="0.00" /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={recordForm.control} name="mileage" render={({ field }) => (
                       <FormItem><FormLabel>Mileage</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl><FormMessage /></FormItem>
@@ -425,7 +426,7 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                          <CalendarWithSelector selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} />
                         </PopoverContent>
                       </Popover>
                       <FormMessage />
@@ -560,13 +561,13 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
                       )} />
                     </div>
                     <FormField control={form.control} name="amount" render={({ field }) => (
-                      <FormItem><FormLabel>Amount (₹)</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(Math.round(parseFloat(e.target.value) * 100))} value={field.value ? (field.value / 100).toFixed(2) : ''} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Amount (₹)</FormLabel><FormControl><AmountInput value={field.value} onChange={field.onChange} placeholder="0.00" /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="description" render={({ field }) => (
                         <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Optional details" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                      <FormField control={form.control} name="date" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
+                        <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarWithSelector selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} /></PopoverContent></Popover><FormMessage /></FormItem>
                       )} />
                     <Button type="submit" className="w-full">{editingTx ? 'Update Transaction' : 'Save'}</Button>
                   </form>
@@ -723,14 +724,14 @@ function InsuranceTab({ vehicleId }: { vehicleId: number }) {
                   )} />
                 </div>
                  <FormField control={form.control} name="premiumAmount" render={({ field }) => (
-                    <FormItem><FormLabel>Premium (₹)</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(Math.round(parseFloat(e.target.value) * 100))} value={field.value ? (field.value / 100).toFixed(2) : ''} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Premium (₹)</FormLabel><FormControl><AmountInput value={field.value} onChange={field.onChange} placeholder="0.00" /></FormControl><FormMessage /></FormItem>
                   )} />
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="startDate" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
+                        <FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarWithSelector selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="endDate" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
+                        <FormItem className="flex flex-col"><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarWithSelector selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>
                   )} />
                 </div>
                 <FormField control={form.control} name="coverageDetails" render={({ field }) => (
