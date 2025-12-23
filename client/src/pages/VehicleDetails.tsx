@@ -110,11 +110,22 @@ export default function VehicleDetails() {
 function OverviewTab({ vehicle }: { vehicle: any }) {
   const updateVehicle = useUpdateVehicle();
   const [mileage, setMileage] = useState<number>(vehicle.currentMileage || 0);
+  const [vin, setVin] = useState<string>(vehicle.vin || '');
+
+  // Sync mileage and VIN when vehicle data updates
+  useEffect(() => {
+    setMileage(vehicle.currentMileage || 0);
+    setVin(vehicle.vin || '');
+  }, [vehicle.currentMileage, vehicle.vin]);
 
   const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     const num = val === "" ? 0 : parseInt(val, 10);
     setMileage(isNaN(num) ? 0 : num);
+  };
+
+  const handleVinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setVin(e.target.value);
   };
 
   return (
@@ -127,7 +138,26 @@ function OverviewTab({ vehicle }: { vehicle: any }) {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <Label className="text-muted-foreground">VIN Number</Label>
-              <div className="font-mono text-lg mt-1 select-all">{vehicle.vin || 'Not provided'}</div>
+              <div className="flex items-center gap-3 mt-1">
+                <Input 
+                  type="text" 
+                  value={vin} 
+                  onChange={handleVinChange}
+                  className="max-w-[150px] font-mono"
+                />
+                <Button 
+                  size="sm" 
+                  disabled={vin === vehicle.vin}
+                  onClick={() => {
+                    if (vin !== vehicle.vin) {
+                      updateVehicle.mutate({ id: vehicle.id, vin });
+                    }
+                  }}
+                  data-testid="button-update-vin"
+                >
+                  Update
+                </Button>
+              </div>
             </div>
              <div>
               <Label className="text-muted-foreground">License Plate</Label>
