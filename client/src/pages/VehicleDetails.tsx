@@ -32,6 +32,9 @@ export default function VehicleDetails() {
   const [, params] = useRoute("/vehicles/:id");
   const [, setLocation] = useLocation();
   const id = parseInt(params?.id || "0");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [openServiceRecord, setOpenServiceRecord] = useState(false);
+  const [openTransaction, setOpenTransaction] = useState(false);
   
   const { data: vehicle, isLoading } = useVehicle(id);
   const deleteVehicle = useDeleteVehicle();
@@ -78,7 +81,7 @@ export default function VehicleDetails() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-secondary/50 p-1 rounded-xl h-12">
           <TabsTrigger value="overview" className="rounded-lg h-10 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm">Overview</TabsTrigger>
           <TabsTrigger value="service" className="rounded-lg h-10 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm">Service</TabsTrigger>
@@ -87,15 +90,15 @@ export default function VehicleDetails() {
         </TabsList>
 
         <TabsContent value="overview">
-           <OverviewTab vehicle={vehicle} />
+           <OverviewTab vehicle={vehicle} onLogExpense={() => { setActiveTab("financials"); setTimeout(() => setOpenTransaction(true), 0); }} onRecordService={() => { setActiveTab("service"); setTimeout(() => setOpenServiceRecord(true), 0); }} />
         </TabsContent>
 
         <TabsContent value="service">
-          <ServiceTab vehicleId={id} />
+          <ServiceTab vehicleId={id} openRecord={openServiceRecord} setOpenRecord={setOpenServiceRecord} />
         </TabsContent>
 
         <TabsContent value="financials">
-          <FinancialsTab vehicleId={id} />
+          <FinancialsTab vehicleId={id} openTx={openTransaction} setOpenTx={setOpenTransaction} />
         </TabsContent>
 
         <TabsContent value="insurance">
@@ -108,7 +111,7 @@ export default function VehicleDetails() {
 
 // === SUB-COMPONENTS FOR TABS ===
 
-function OverviewTab({ vehicle }: { vehicle: any }) {
+function OverviewTab({ vehicle, onLogExpense, onRecordService }: { vehicle: any; onLogExpense: () => void; onRecordService: () => void }) {
   const updateVehicle = useUpdateVehicle();
   const [mileage, setMileage] = useState<number>(vehicle.currentMileage || 0);
   const [vin, setVin] = useState<string>(vehicle.vin || '');
@@ -199,11 +202,10 @@ function OverviewTab({ vehicle }: { vehicle: any }) {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="opacity-80 text-sm">Most common actions for this vehicle.</p>
-          <Button variant="secondary" className="w-full justify-start gap-2" asChild>
-            {/* Logic to open add fuel would be complex here without state lifting, simplified for demo */}
-            <div className="cursor-pointer"><DollarSign className="w-4 h-4"/> Log Expense</div>
+          <Button variant="secondary" className="w-full justify-start gap-2" onClick={onLogExpense} data-testid="button-log-expense">
+            <DollarSign className="w-4 h-4"/> Log Expense
           </Button>
-          <Button variant="secondary" className="w-full justify-start gap-2">
+          <Button variant="secondary" className="w-full justify-start gap-2" onClick={onRecordService} data-testid="button-record-service">
             <PenTool className="w-4 h-4"/> Record Service
           </Button>
         </CardContent>
@@ -212,7 +214,7 @@ function OverviewTab({ vehicle }: { vehicle: any }) {
   );
 }
 
-function ServiceTab({ vehicleId }: { vehicleId: number }) {
+function ServiceTab({ vehicleId, openRecord: externalOpenRecord, setOpenRecord: externalSetOpenRecord }: { vehicleId: number; openRecord?: boolean; setOpenRecord?: (open: boolean) => void }) {
   const { data: reminders } = useReminders(vehicleId);
   const { data: records } = useRecords(vehicleId);
   const createReminder = useCreateReminder();
@@ -223,9 +225,15 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   const updateRecord = useUpdateRecord();
   
   const [openReminder, setOpenReminder] = useState(false);
-  const [openRecord, setOpenRecord] = useState(false);
+  const [openRecord, setOpenRecord] = useState(externalOpenRecord ?? false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [editingReminder, setEditingReminder] = useState<any>(null);
+
+  useEffect(() => {
+    if (externalOpenRecord !== undefined) {
+      setOpenRecord(externalOpenRecord);
+    }
+  }, [externalOpenRecord]);
 
   // Forms setup
   const reminderForm = useForm({ 
@@ -486,12 +494,12 @@ function ServiceTab({ vehicleId }: { vehicleId: number }) {
   );
 }
 
-function FinancialsTab({ vehicleId }: { vehicleId: number }) {
+function FinancialsTab({ vehicleId, openTx: externalOpenTx, setOpenTx: externalSetOpenTx }: { vehicleId: number; openTx?: boolean; setOpenTx?: (open: boolean) => void }) {
   const { data: transactions } = useTransactions(vehicleId);
   const createTx = useCreateTransaction();
   const deleteTx = useDeleteTransaction();
   const updateTx = useUpdateTransaction();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(externalOpenTx ?? false);
   const [editingTx, setEditingTx] = useState<any>(null);
   const form = useForm({ 
     resolver: zodResolver(insertTransactionSchema.omit({ vehicleId: true })),
@@ -503,6 +511,12 @@ function FinancialsTab({ vehicleId }: { vehicleId: number }) {
       date: new Date(),
     }
   });
+
+  useEffect(() => {
+    if (externalOpenTx !== undefined) {
+      setOpen(externalOpenTx);
+    }
+  }, [externalOpenTx]);
 
   // Update transaction form when editing
   useEffect(() => {
