@@ -47,15 +47,15 @@ export function CalendarWithSelector({
   };
 
   return (
-    <div className={`space-y-4 p-4 ${className || ""}`}>
+    <div className={`space-y-2 p-2 ${className || ""}`}>
       <div className="flex gap-2">
         <Select value={year.toString()} onValueChange={(val) => setYear(parseInt(val))}>
-          <SelectTrigger className="w-1/2 text-sm">
+          <SelectTrigger className="w-1/2 text-xs h-8">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="h-[200px]">
             {years.map((y) => (
-              <SelectItem key={y} value={y.toString()} className="text-sm">
+              <SelectItem key={y} value={y.toString()} className="text-xs">
                 {y}
               </SelectItem>
             ))}
@@ -63,12 +63,12 @@ export function CalendarWithSelector({
         </Select>
 
         <Select value={month.toString()} onValueChange={(val) => setMonth(parseInt(val))}>
-          <SelectTrigger className="w-1/2 text-sm">
+          <SelectTrigger className="w-1/2 text-xs h-8">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {months.map((m, idx) => (
-              <SelectItem key={idx} value={idx.toString()} className="text-sm">
+              <SelectItem key={idx} value={idx.toString()} className="text-xs">
                 {m}
               </SelectItem>
             ))}
