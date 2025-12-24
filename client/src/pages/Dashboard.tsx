@@ -1,11 +1,13 @@
 import { useDashboardStats } from "@/hooks/use-dashboard";
 import { useVehicles, useCreateVehicle } from "@/hooks/use-vehicles";
+import { useReminders } from "@/hooks/use-reminders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Car, DollarSign, AlertTriangle, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
@@ -21,6 +23,12 @@ export default function Dashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const createVehicle = useCreateVehicle();
+
+  // Fetch reminders for all vehicles to show in tooltip
+  const remindersData = vehicles?.map(v => useReminders(v.id)) || [];
+  const allReminders = remindersData
+    .filter(r => r.data)
+    .flatMap((r, idx) => (r.data || []).map(reminder => ({ ...reminder, vehicleId: vehicles?.[idx].id, vehicleName: `${vehicles?.[idx].make} ${vehicles?.[idx].model}` })));
 
   const form = useForm<InsertVehicle>({
     resolver: zodResolver(insertVehicleSchema),
@@ -195,12 +203,35 @@ export default function Dashboard() {
           icon={DollarSign} 
           colorClass="bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
         />
-        <StatCard 
-          title="Reminders Due" 
-          value={stats?.upcomingRemindersCount || 0} 
-          icon={AlertTriangle} 
-          colorClass="bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
-        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <StatCard 
+                title="Reminders Due" 
+                value={stats?.upcomingRemindersCount || 0} 
+                icon={AlertTriangle} 
+                colorClass="bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
+              />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-xs">
+            {allReminders.length > 0 ? (
+              <div className="space-y-2">
+                <p className="font-semibold">Upcoming Reminders:</p>
+                <ul className="text-sm space-y-1">
+                  {allReminders.slice(0, 5).map((reminder, idx) => (
+                    <li key={idx} className="text-xs">
+                      <span className="font-medium">{reminder.vehicleName}</span>: {reminder.description || reminder.serviceType}
+                    </li>
+                  ))}
+                  {allReminders.length > 5 && <li className="text-xs opacity-75">+{allReminders.length - 5} more...</li>}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-sm">No upcoming reminders</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Vehicle List */}
